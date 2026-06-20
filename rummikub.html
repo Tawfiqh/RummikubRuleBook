@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rummikub — How to Play</title>
+<style>
+  :root {
+    --red:    #E63946;
+    --blue:   #1565C0;
+    --orange: #F4831F;
+    --black:  #1A1A2E;
+    --gold:   #FFD700;
+    --bg:     #0F172A;
+    --surface: #1E293B;
+    --surface2: #273349;
+    --text:   #F1F5F9;
+    --muted:  #94A3B8;
+    --radius: 16px;
+    --tile-r: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    padding: 32px 20px 64px;
+    min-height: 100vh;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    text-align: center;
+    padding: 56px 24px 48px;
+    background: linear-gradient(135deg, #1a0a2e 0%, #0d1b3e 50%, #0a2a1a 100%);
+    border-radius: 24px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(230,57,70,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(21,101,192,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-tiles {
+    display: flex; gap: 10px; justify-content: center;
+    margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 30%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .hero p {
+    color: var(--muted);
+    font-size: 1.15rem;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(255,215,0,0.12);
+    color: var(--gold);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 14px;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* ── Tiles ── */
+  .tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px; height: 58px;
+    border-radius: var(--tile-r);
+    font-weight: 800;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    background: #fff;
+    position: relative;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .tile.sm { width: 36px; height: 46px; font-size: 0.9rem; }
+  .tile.lg { width: 56px; height: 70px; font-size: 1.3rem; }
+  .tile.red    { color: var(--red); }
+  .tile.blue   { color: var(--blue); }
+  .tile.orange { color: var(--orange); }
+  .tile.black  { color: var(--black); }
+  .tile.joker  {
+    background: linear-gradient(135deg, #2d1a00, #5a3a00);
+    color: var(--gold);
+    font-size: 1.3rem;
+    border: 2px solid rgba(255,215,0,0.4);
+  }
+  .tile.face-down {
+    background: linear-gradient(135deg, #1e3a5f, #0f2a4a);
+    border: 2px solid rgba(100,160,255,0.2);
+    font-size: 1.5rem;
+    color: rgba(100,160,255,0.3);
+  }
+
+  /* ── Grid layout ── */
+  .grid {
+    display: grid;
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .card.accent-red::before    { background: linear-gradient(90deg, var(--red), transparent); }
+  .card.accent-blue::before   { background: linear-gradient(90deg, var(--blue), transparent); }
+  .card.accent-orange::before { background: linear-gradient(90deg, var(--orange), transparent); }
+  .card.accent-black::before  { background: linear-gradient(90deg, #555, transparent); }
+  .card.accent-gold::before   { background: linear-gradient(90deg, var(--gold), transparent); }
+  .card.accent-green::before  { background: linear-gradient(90deg, #22c55e, transparent); }
+  .card.accent-purple::before { background: linear-gradient(90deg, #a855f7, transparent); }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 14px;
+    display: block;
+  }
+  .card h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .card h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .card p, .card li {
+    font-size: 0.92rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+  .card ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .card ul li::before { content: '→ '; color: var(--gold); font-weight: 700; }
+
+  /* ── Section titles ── */
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin: 40px 0 16px;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 0 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* ── Colour legend ── */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .color-swatch {
+    border-radius: 12px;
+    padding: 20px 12px;
+    text-align: center;
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+  }
+  .color-swatch.red    { background: rgba(230,57,70,0.12);  border: 1px solid rgba(230,57,70,0.3); }
+  .color-swatch.blue   { background: rgba(21,101,192,0.12); border: 1px solid rgba(21,101,192,0.3); }
+  .color-swatch.orange { background: rgba(244,131,31,0.12); border: 1px solid rgba(244,131,31,0.3); }
+  .color-swatch.black  { background: rgba(100,100,120,0.12); border: 1px solid rgba(100,100,120,0.3); }
+  .color-swatch span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .color-swatch.red span    { color: var(--red); }
+  .color-swatch.blue span   { color: #60a5fa; }
+  .color-swatch.orange span { color: var(--orange); }
+  .color-swatch.black span  { color: #94a3b8; }
+
+  /* ── Set examples ── */
+  .set-example {
+    display: flex; gap: 6px; align-items: center;
+    flex-wrap: wrap; margin: 14px 0 6px;
+  }
+  .set-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* ── Number row ── */
+  .number-row {
+    display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0;
+  }
+
+  /* ── Turn steps ── */
+  .steps { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+  .step {
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #334155, #1e293b);
+    border: 2px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700;
+    flex-shrink: 0; color: var(--gold);
+  }
+  .step-body { font-size: 0.92rem; color: var(--muted); line-height: 1.6; padding-top: 3px; }
+  .step-body strong { color: var(--text); }
+
+  /* ── Highlight box ── */
+  .highlight {
+    background: rgba(255,215,0,0.07);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    font-size: 0.92rem;
+    color: #fde68a;
+    line-height: 1.65;
+  }
+  .highlight strong { color: var(--gold); }
+
+  /* ── Warning box ── */
+  .warning {
+    background: rgba(230,57,70,0.07);
+    border: 1px solid rgba(230,57,70,0.25);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    font-size: 0.92rem;
+    color: #fca5a5;
+    line-height: 1.65;
+  }
+  .warning strong { color: var(--red); }
+
+  /* ── Stat blocks ── */
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+  .stat {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    flex: 1; min-width: 100px; text-align: center;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .stat .val {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, #fff, var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat .lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center; margin-top: 48px;
+    font-size: 0.8rem; color: var(--muted);
+  }
+
+  /* ── vs divider ── */
+  .vs { color: var(--muted); font-size: 0.8rem; font-weight: 700; align-self: center; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════ HERO ══════════════════════════════ -->
+<div class="hero">
+  <div class="badge">Board Game Guide</div>
+  <div class="hero-tiles">
+    <div class="tile lg red">7</div>
+    <div class="tile lg blue">7</div>
+    <div class="tile lg orange">7</div>
+    <div class="tile lg black">7</div>
+    <div class="tile lg joker">★</div>
+  </div>
+  <h1>Rummikub</h1>
+  <p>The fast-paced tile-rummy game of sets, runs, and clever rearranging</p>
+</div>
+
+<!-- ══════════════════════════════ COMPONENTS ══════════════════════════════ -->
+<p class="section-title">The Tiles</p>
+<div class="grid grid-2" style="max-width:1100px;margin:0 auto 0;">
+  <div class="card accent-gold">
+    <span class="card-icon">🎲</span>
+    <h2>What's in the box?</h2>
+    <div class="stats">
+      <div class="stat"><div class="val">106</div><div class="lbl">Total tiles</div></div>
+      <div class="stat"><div class="val">2×52</div><div class="lbl">Number tiles</div></div>
+      <div class="stat"><div class="val">2</div><div class="lbl">Jokers</div></div>
+    </div>
+    <div class="highlight" style="margin-top:18px;">
+      Numbers <strong>1–13</strong> in <strong>4 colours</strong>, two complete sets — plus 2 wildcard Jokers.
+    </div>
+  </div>
+
+  <div class="card accent-blue">
+    <span class="card-icon">🎨</span>
+    <h2>The Four Colours</h2>
+    <div class="color-grid" style="margin-top:12px;">
+      <div class="color-swatch red">
+        <div class="tile sm red">9</div>
+        <span>Red</span>
+      </div>
+      <div class="color-swatch blue">
+        <div class="tile sm blue">9</div>
+        <span>Blue</span>
+      </div>
+      <div class="color-swatch orange">
+        <div class="tile sm orange">9</div>
+        <span>Orange</span>
+      </div>
+      <div class="color-swatch black">
+        <div class="tile sm black">9</div>
+        <span>Black</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SETUP ══════════════════════════════ -->
+<p class="section-title">Setup</p>
+<div class="grid grid-3" style="max-width:1100px;margin:0 auto;">
+  <div class="card accent-purple">
+    <span class="card-icon">👥</span>
+    <h2>Players & Starting Hand</h2>
+    <div class="stats">
+      <div class="stat"><div class="val">2–4</div><div class="lbl">Players</div></div>
+      <div class="stat"><div class="val">14</div><div class="lbl">Starting tiles</div></div>
+    </div>
+    <p style="margin-top:14px;">Shuffle all tiles face-down into a pool. Each player draws <strong style="color:#fff">14 tiles</strong> and places them on their rack.</p>
+  </div>
+
+  <div class="card accent-green">
+    <span class="card-icon">🔀</span>
+    <h2>Starting the Game</h2>
+    <ul style="margin-top:4px;">
+      <li>The youngest player goes first</li>
+      <li>Play continues clockwise</li>
+      <li>Keep your tiles hidden from other players</li>
+      <li>The pool stays face-down in the middle</li>
+    </ul>
+  </div>
+
+  <div class="card accent-orange">
+    <span class="card-icon">🏆</span>
+    <h2>Goal</h2>
+    <p>Be the <strong style="color:#fff">first player to place all 14 tiles</strong> from your rack onto the table in valid sets. Everyone else scores negative points equal to the tiles left on their rack.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ VALID SETS ══════════════════════════════ -->
+<p class="section-title">Valid Sets</p>
+<div class="grid grid-2" style="max-width:1100px;margin:0 auto;">
+
+  <div class="card accent-red">
+    <span class="card-icon">🟰</span>
+    <h2>Groups — Same Number, Different Colours</h2>
+    <p style="margin-bottom:4px;">3 or 4 tiles with the <strong style="color:#fff">same number</strong>, each a <strong style="color:#fff">different colour</strong>.</p>
+
+    <div class="set-example">
+      <div class="tile red">8</div>
+      <div class="tile blue">8</div>
+      <div class="tile orange">8</div>
+    </div>
+    <p class="set-label">✓ Group of 3 — three 8s in different colours</p>
+
+    <div class="set-example" style="margin-top:16px;">
+      <div class="tile red">11</div>
+      <div class="tile blue">11</div>
+      <div class="tile orange">11</div>
+      <div class="tile black">11</div>
+    </div>
+    <p class="set-label">✓ Group of 4 — all four colours</p>
+
+    <div class="warning">
+      <strong>Invalid:</strong> You cannot use two tiles of the same colour in a group — e.g. two red 8s is not allowed.
+    </div>
+  </div>
+
+  <div class="card accent-blue">
+    <span class="card-icon">➡️</span>
+    <h2>Runs — Consecutive Numbers, Same Colour</h2>
+    <p style="margin-bottom:4px;">3 or more tiles in <strong style="color:#fff">consecutive order</strong>, all the <strong style="color:#fff">same colour</strong>. Minimum length: 3.</p>
+
+    <div class="set-example">
+      <div class="tile blue">5</div>
+      <div class="tile blue">6</div>
+      <div class="tile blue">7</div>
+      <div class="tile blue">8</div>
+    </div>
+    <p class="set-label">✓ Run of 4 — blue 5 through 8</p>
+
+    <div class="set-example" style="margin-top:16px;">
+      <div class="tile orange">11</div>
+      <div class="tile orange">12</div>
+      <div class="tile orange">13</div>
+    </div>
+    <p class="set-label">✓ Run of 3 — orange 11, 12, 13 (1 does not wrap to 13)</p>
+
+    <div class="warning">
+      <strong>Invalid:</strong> Mixed colours or non-consecutive numbers don't form a run. Numbers do <strong>not</strong> wrap around (13 → 1).
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ FIRST MELD ══════════════════════════════ -->
+<p class="section-title">Your First Move — The Initial Meld</p>
+<div class="card accent-gold" style="max-width:1100px;margin:0 auto;">
+  <span class="card-icon">🔓</span>
+  <h2>You must score at least 30 points on your first play</h2>
+  <div class="grid grid-2" style="margin-top:8px;">
+    <div>
+      <p>Before you can use tiles already on the table, your very first turn must contribute sets totalling <strong style="color:#fff">30 or more points</strong>, using <em>only tiles from your own rack</em>.</p>
+      <div class="highlight">
+        <strong>Tile values = face value.</strong> A 7 is worth 7, a 12 is worth 12. Jokers count as the value of the tile they represent — not 30 automatically.
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:12px;">Example opening melds</h3>
+      <div class="set-example">
+        <div class="tile sm red">10</div><div class="tile sm blue">10</div><div class="tile sm orange">10</div>
+        <div class="vs">+</div>
+        <div class="tile sm black">7</div><div class="tile sm black">8</div><div class="tile sm black">9</div>
+      </div>
+      <p class="set-label">10+10+10 = 30 ✓ &nbsp;|&nbsp; 7+8+9 = 24 ✗ alone, but combined = 54 ✓</p>
+      <div class="warning" style="margin-top:16px;">
+        If you cannot reach 30, draw 1 tile from the pool and <strong>end your turn</strong>. You also draw 1 penalty tile each turn you cannot play.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ TURNS ══════════════════════════════ -->
+<p class="section-title">Taking Your Turn</p>
+<div class="grid grid-2" style="max-width:1100px;margin:0 auto;">
+  <div class="card accent-green">
+    <span class="card-icon">🃏</span>
+    <h2>Option A — Play Tiles</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">Add tiles from your rack to the table — forming <strong>new sets</strong> or extending <strong>existing sets</strong>.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body"><strong>Rearrange freely.</strong> You may split, merge, or reshape any sets on the table — as long as every set is valid when you finish.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">You <strong>must</strong> have placed at least one tile from your rack. You cannot rearrange without adding a tile.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card accent-red">
+    <span class="card-icon">🫴</span>
+    <h2>Option B — Draw a Tile</h2>
+    <p style="margin-top:4px;">If you <strong style="color:#fff">cannot (or choose not to)</strong> play, draw 1 tile from the pool and immediately end your turn.</p>
+
+    <div class="warning" style="margin-top:18px;">
+      <strong>Can't finish your move?</strong> If you've started rearranging but can't leave all sets valid, you must take back every tile you touched <em>plus</em> draw 3 penalty tiles from the pool.
+    </div>
+
+    <div class="highlight" style="margin-top:12px;">
+      <strong>Tip:</strong> Use a timer (60–90 sec) to keep the game moving — if time runs out, the player draws 3 tiles.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ JOKERS ══════════════════════════════ -->
+<p class="section-title">Jokers</p>
+<div class="card accent-gold" style="max-width:1100px;margin:0 auto;">
+  <div class="grid grid-2">
+    <div>
+      <span class="card-icon">★</span>
+      <h2>The Wild Card</h2>
+      <p>A Joker substitutes for <strong style="color:#fff">any tile</strong> in a set. Its point value equals the tile it represents.</p>
+      <div class="set-example" style="margin-top:14px;">
+        <div class="tile red">4</div>
+        <div class="tile joker">★</div>
+        <div class="tile red">6</div>
+      </div>
+      <p class="set-label">Joker acts as red 5 in this run</p>
+    </div>
+    <div style="padding-top:56px;">
+      <ul>
+        <li>You may <strong style="color:#fff">retrieve a joker</strong> from the table by replacing it with the exact tile it represents</li>
+        <li>The retrieved joker must be used <strong style="color:#fff">in the same turn</strong></li>
+        <li>You cannot take a joker if it hasn't been retrieved with the correct tile</li>
+        <li>If left in your hand at game-end, a joker scores <strong style="color:#fff">−30 points</strong></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ REARRANGING ══════════════════════════════ -->
+<p class="section-title">Rearranging the Table</p>
+<div class="card accent-purple" style="max-width:1100px;margin:0 auto;">
+  <span class="card-icon">♻️</span>
+  <h2>Manipulating Existing Sets</h2>
+  <div class="grid grid-3">
+    <div>
+      <h3>Splitting</h3>
+      <div class="set-example">
+        <div class="tile sm blue">3</div><div class="tile sm blue">4</div><div class="tile sm blue">5</div><div class="tile sm blue">6</div><div class="tile sm blue">7</div>
+      </div>
+      <p class="set-label">Split into 3–4–5 and 6–7 + your tile</p>
+    </div>
+    <div>
+      <h3>Adding to a Group</h3>
+      <div class="set-example">
+        <div class="tile sm red">9</div><div class="tile sm blue">9</div><div class="tile sm orange">9</div>
+        <div class="vs">+</div>
+        <div class="tile sm black">9</div>
+      </div>
+      <p class="set-label">Extend a group of 3 to a group of 4</p>
+    </div>
+    <div>
+      <h3>Stealing from a Run</h3>
+      <div class="set-example">
+        <div class="tile sm orange">8</div><div class="tile sm orange">9</div><div class="tile sm orange">10</div><div class="tile sm orange">11</div>
+      </div>
+      <p class="set-label">Take the 11 to use elsewhere — 8–9–10 stays valid</p>
+    </div>
+  </div>
+  <div class="warning" style="margin-top:20px;">
+    <strong>Golden rule:</strong> At the end of your turn, <em>every</em> set on the table must be valid — minimum 3 tiles, correct group or run. No orphan tiles left dangling.
+  </div>
+</div>
+
+<!-- ══════════════════════════════ WINNING & SCORING ══════════════════════════════ -->
+<p class="section-title">Winning & Scoring</p>
+<div class="grid grid-2" style="max-width:1100px;margin:0 auto;">
+  <div class="card accent-green">
+    <span class="card-icon">🎉</span>
+    <h2>Winning</h2>
+    <p>Shout <strong style="color:#fff">"Rummikub!"</strong> when you place your last tile. The game ends immediately.</p>
+    <div class="highlight" style="margin-top:16px;">
+      The winner scores <strong>0 points</strong> (no penalty) and receives a bonus equal to the <strong>sum of all other players' negative scores</strong>.
+    </div>
+  </div>
+
+  <div class="card accent-red">
+    <span class="card-icon">📉</span>
+    <h2>Scoring (Losers)</h2>
+    <p style="margin-bottom:12px;">Each losing player counts the tiles remaining on their rack:</p>
+    <ul>
+      <li>Each numbered tile = <strong style="color:#fff">its face value</strong> (negative)</li>
+      <li>Each joker = <strong style="color:#fff">−30 points</strong></li>
+    </ul>
+    <div class="warning" style="margin-top:14px;">
+      Play multiple rounds — the player with the <strong>highest score</strong> after an agreed number of rounds wins the match.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ QUICK REF ══════════════════════════════ -->
+<p class="section-title">Quick Reference</p>
+<div class="grid grid-4" style="max-width:1100px;margin:0 auto;">
+  <div class="card" style="text-align:center; border-color:rgba(230,57,70,0.3);">
+    <div style="font-size:2.5rem;margin-bottom:8px;">3+</div>
+    <p style="font-size:0.85rem; color:var(--muted);">Minimum tiles per set</p>
+  </div>
+  <div class="card" style="text-align:center; border-color:rgba(255,215,0,0.3);">
+    <div style="font-size:2.5rem;margin-bottom:8px; color:var(--gold); font-weight:800;">30</div>
+    <p style="font-size:0.85rem; color:var(--muted);">Points to open (initial meld)</p>
+  </div>
+  <div class="card" style="text-align:center; border-color:rgba(21,101,192,0.3);">
+    <div style="font-size:2.5rem;margin-bottom:8px; font-weight:800;">14</div>
+    <p style="font-size:0.85rem; color:var(--muted);">Starting tiles per player</p>
+  </div>
+  <div class="card" style="text-align:center; border-color:rgba(244,131,31,0.3);">
+    <div style="font-size:2.5rem;margin-bottom:8px; font-weight:800; color:var(--red);">−30</div>
+    <p style="font-size:0.85rem; color:var(--muted);">Penalty for a joker in hand</p>
+  </div>
+</div>
+
+<footer>
+  <p>Rummikub was invented by Ephraim Hertzano in the 1940s and first sold commercially in 1977.</p>
+  <p style="margin-top:6px;">Made with 🎲</p>
+</footer>
+
+</body>
+</html>
