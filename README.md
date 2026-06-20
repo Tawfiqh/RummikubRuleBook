@@ -1,4 +1,4 @@
-# 🎲 Rummikub Rulebook
+# 🃏 Rummikub Rulebook
 
 A single-page visual guide to Rummikub, designed to be easy to scan and reference mid-game.
 
